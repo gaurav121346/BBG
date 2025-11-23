@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Bulls • Bears • Goats — Guessing Game</title>
+
+<!-- Google font (optional) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: linear-gradient(135deg,#0f172a 0%, #0b1220 50%, #081224 100%);
+    --card: rgba(255,255,255,0.04);
+    --glass: rgba(255,255,255,0.03);
+    --accent: linear-gradient(90deg,#7c3aed,#06b6d4);
+    --muted: rgba(255,255,255,0.55);
+    --success: #10b981;
+    --danger: #ef4444;
+    --max-width: 920px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: var(--bg);
+    color: #e6eef8;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{
+    width:100%;
+    max-width:var(--max-width);
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:16px;
+    padding:28px;
+    box-shadow: 0 10px 30px rgba(2,6,23,0.7), inset 0 1px 0 rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.03);
+    display:grid;
+    grid-template-columns: 1fr 360px;
+    gap:20px;
+  }
+
+  @media(max-width:900px){
+    .wrap{grid-template-columns:1fr; padding:20px}
+  }
+
+  header{
+    grid-column: 1 / -1;
+    display:flex;
+    gap:16px;
+    align-items:center;
+    margin-bottom:6px;
+  }
+  .logo{
+    width:64px;height:64px;border-radius:12px;
+    background:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:20px;color:white;
+    box-shadow:0 6px 20px rgba(124,58,237,0.18);
+  }
+  h1{font-size:20px;margin:0}
+  p.lead{margin:0;color:var(--muted);font-size:13px}
+
+  /* left column (game) */
+  .game{
+    background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+    padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.02);
+  }
+  .instructions{
+    font-size:13px;color:var(--muted);
+    background:var(--glass);padding:12px;border-radius:10px;margin-bottom:14px;
+  }
+
+  .board{
+    display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;
+  }
+  .attempts {
+    display:flex;gap:8px;align-items:center;
+  }
+  .pill{
+    padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.02);font-weight:600;font-size:13px;
+  }
+
+  .input-row{
+    display:flex;gap:12px;align-items:center;width:100%;
+    margin-bottom:12px;
+  }
+  input[type="text"]{
+    flex:1;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);
+    background:transparent;color:inherit;font-size:16px;outline:none;
+    box-shadow:inset 0 -4px 12px rgba(0,0,0,0.25);
+  }
+  input[type="text"]::placeholder{color:rgba(255,255,255,0.35)}
+
+  button.btn{
+    padding:10px 14px;border-radius:10px;border:0;font-weight:700;
+    background:linear-gradient(90deg,#7c3aed,#06b6d4);color:white;cursor:pointer;
+    box-shadow:0 8px 18px rgba(3,7,18,0.6);
+  }
+  button.ghost{
+    background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);
+  }
+
+  .history{
+    margin-top:8px;max-height:320px;overflow:auto;padding-right:6px;
+  }
+  .row{
+    display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;margin-bottom:8px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.008));
+    border:1px solid rgba(255,255,255,0.02);
+  }
+  .row .guess{font-weight:800;font-size:18px;min-width:74px;text-align:center}
+  .chips{display:flex;gap:8px;margin-left:auto}
+  .chip{padding:6px 8px;border-radius:8px;font-weight:700;font-size:13px;color:#071126}
+  .chip.bull{background:linear-gradient(90deg,#a78bfa,#7c3aed);color:white}
+  .chip.bear{background:linear-gradient(90deg,#34d399,#06b6d4);color:white}
+  .chip.goat{background:linear-gradient(90deg,#fca5a5,#fb7185);color:white}
+
+  /* right column (panel) */
+  .panel{
+    padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.02);height:fit-content;
+  }
+  .panel h3{margin-top:0}
+  .stat{
+    display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;margin-bottom:10px;
+    background:rgba(255,255,255,0.02);font-weight:700;
+  }
+  .stat .big{font-size:20px}
+  .tiny{font-size:12px;color:var(--muted)}
+
+  .result-banner{
+    margin-top:12px;padding:12px;border-radius:10px;text-align:center;font-weight:800;
+  }
+  .result-banner.win{background:linear-gradient(90deg,#bbf7d0,#10b981);color:#042f16}
+  .result-banner.lose{background:linear-gradient(90deg,#fecaca,#ef4444);color:#3b0a0a}
+
+  footer{grid-column:1/-1;margin-top:12px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between}
+  a.link{color:inherit;text-decoration:underline;opacity:0.9}
+  .small{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+  <div class="wrap" role="application" aria-label="Bulls Bears Goats game">
+    <header>
+      <div class="logo">BBG</div>
+      <div>
+        <h1>Bulls • Bears • Goats</h1>
+        <p class="lead">Guess a random 3-digit number with no repeating digits. You have <strong id="limitLabel">5</strong> attempts.</p>
+      </div>
+    </header>
+
+    <main class="game" id="game">
+      <div class="instructions" id="instructions">
+        <strong>How to play</strong><br>
+        • Secret is a 3-digit number between 100 and 999 with no repeated digits.<br>
+        • Enter guesses like <code>549</code>. No leading zeros. No repeated digits.<br>
+        • After each guess you’ll see: <span class="pill">Bulls</span> (right place), <span class="pill">Bears</span> (right digit, wrong place), and <span class="pill">Goats</span> (not present).<br>
+        <em>Example:</em> secret <code>549</code>, guess <code>592</code> → 1 Bull (5), 1 Bear (9), 1 Goat (2).
+      </div>
+
+      <div class="board" aria-live="polite">
+        <div class="attempts">
+          <div class="pill">Attempts: <span id="attemptCounter">0</span>/<span id="attemptMax">5</span></div>
+          <div class="pill" title="Secret number (for demo only, hidden in production)">Secret: <span id="secretReveal">***</span></div>
+        </div>
+      </div>
+
+      <div class="input-row" role="region" aria-label="Guess input">
+        <input type="text" id="guessInput" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="Enter 3-digit guess (e.g. 549)" aria-label="Guess input">
+        <button id="guessBtn" class="btn" aria-label="Submit guess">Guess</button>
+        <button id="hintBtn" class="ghost" title="Show example and rules">Help</button>
+      </div>
+
+      <div class="history" id="history" aria-live="polite" aria-label="Guess history">
+        <!-- guess rows inserted here -->
+      </div>
+
+      <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+        <button id="newBtn" class="ghost">New Game</button>
+        <button id="revealBtn" class="ghost" title="Reveal secret">Reveal Secret</button>
+        <div style="margin-left:auto" class="tiny">Tip: You can press Enter to submit.</div>
+      </div>
+    </main>
+
+    <aside class="panel" aria-label="Game panel">
+      <h3>Game status</h3>
+      <div class="stat"><div class="big" id="statusText">Ready</div><div style="margin-left:auto" class="tiny" id="statusHint">Make a guess</div></div>
+
+      <h3>Summary</h3>
+      <div class="stat"><div>Attempts used</div><div style="margin-left:auto" id="used">0</div></div>
+      <div class="stat"><div>Best result</div><div style="margin-left:auto" id="best">—</div></div>
+
+      <div id="bannerPlaceholder"></div>
+
+      <div style="margin-top:12px">
+        <h4 style="margin:0 0 8px 0">Legend</h4>
+        <div style="display:flex;gap:8px"><div class="chip bull">Bull</div><div class="chip bear">Bear</div><div class="chip goat">Goat</div></div>
+      </div>
+    </aside>
+
+    <footer>
+      <div class="small">Built with ❤️ — client-side JavaScript</div>
+      <div class="small">You can host this page on GitHub Pages / Netlify / Vercel</div>
+    </footer>
+  </div>
+
+<script>
+/*
+  Client-side Bulls / Bears / Goats game
+  - secret stored as string of 3 digits (100-999, no repeats)
+  - attempts limit is configurable (default 5)
+  - UI updates and accessibility-friendly live regions
+*/
+
+(() => {
+  const ATTEMPTS_MAX = 5;              // change attempts limit here
+  const attemptMaxEl = document.getElementById('attemptMax');
+  const attemptCounterEl = document.getElementById('attemptCounter');
+  const usedEl = document.getElementById('used');
+  const bestEl = document.getElementById('best');
+  const statusText = document.getElementById('statusText');
+  const statusHint = document.getElementById('statusHint');
+  const historyEl = document.getElementById('history');
+  const secretRevealEl = document.getElementById('secretReveal');
+  const bannerPlaceholder = document.getElementById('bannerPlaceholder');
+  const limitLabel = document.getElementById('limitLabel');
+
+  attemptMaxEl.textContent = ATTEMPTS_MAX;
+  limitLabel.textContent = ATTEMPTS_MAX;
+
+  let secret = null;
+  let attemptsUsed = 0;
+  let history = [];
+  let bestScore = null;
+  let gameOver = false;
+
+  const input = document.getElementById('guessInput');
+  const guessBtn = document.getElementById('guessBtn');
+  const newBtn = document.getElementById('newBtn');
+  const hintBtn = document.getElementById('hintBtn');
+  const revealBtn = document.getElementById('revealBtn');
+
+  // Utilities
+  function randSecret(){
+    // generate 3-digit string between 100 and 999, no repeated digits
+    const digits = '0123456789'.split('');
+    while(true){
+      const first = digits.slice(1); // remove '0'
+      const a = first[Math.floor(Math.random()*first.length)];
+      const remaining = digits.filter(d => d !== a);
+      const pick = shuffle(remaining).slice(0,2).join('');
+      const s = a + pick;
+      if(new Set(s).size === 3) return s;
+    }
+  }
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+
+  function validateGuess(guess){
+    if(!guess) return {ok:false,msg:'Empty input.'};
+    if(!/^[0-9]{3}$/.test(guess)) return {ok:false,msg:'Enter exactly 3 digits (numbers only).'};
+    if(guess[0] === '0') return {ok:false,msg:'Leading zero not allowed; guess must be between 100 and 999.'};
+    if(new Set(guess).size !== 3) return {ok:false,msg:'Digits must not repeat. Example invalid: 554.'};
+    return {ok:true,msg:''};
+  }
+
+  function scoreGuess(secret, guess){
+    let bulls = 0, bears = 0;
+    for(let i=0;i<3;i++){
+      if(guess[i] === secret[i]) bulls++;
+      else if(secret.includes(guess[i])) bears++;
+    }
+    const goats = 3 - bulls - bears;
+    return {bulls,bears,goats:goats};
+  }
+
+  function setStatus(text, hint=''){
+    statusText.textContent = text;
+    statusHint.textContent = hint;
+  }
+
+  function renderHistory(){
+    historyEl.innerHTML = '';
+    history.forEach(entry => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      const guessEl = document.createElement('div');
+      guessEl.className = 'guess';
+      guessEl.textContent = entry.guess;
+      const attemptEl = document.createElement('div');
+      attemptEl.textContent = `#${entry.attempt}`;
+      attemptEl.style.opacity = 0.8;
+      const chips = document.createElement('div');
+      chips.className = 'chips';
+
+      const cBull = document.createElement('div');
+      cBull.className = 'chip bull';
+      cBull.textContent = `B ${entry.bulls}`;
+      const cBear = document.createElement('div');
+      cBear.className = 'chip bear';
+      cBear.textContent = `R ${entry.bears}`; // R for bear to avoid confusion with "B"
+      const cGoat = document.createElement('div');
+      cGoat.className = 'chip goat';
+      cGoat.textContent = `G ${entry.goats}`;
+
+      chips.appendChild(cBull);
+      chips.appendChild(cBear);
+      chips.appendChild(cGoat);
+
+      row.appendChild(guessEl);
+      row.appendChild(attemptEl);
+      row.appendChild(chips);
+      historyEl.appendChild(row);
+    });
+  }
+
+  function banner(type, text){
+    bannerPlaceholder.innerHTML = '';
+    if(!type) return;
+    const b = document.createElement('div');
+    b.className = 'result-banner ' + (type === 'win' ? 'win' : 'lose');
+    b.textContent = text;
+    bannerPlaceholder.appendChild(b);
+  }
+
+  function revealSecret(reveal=true){
+    secretRevealEl.textContent = reveal ? secret : '***';
+  }
+
+  function newGame(){
+    secret = randSecret();
+    attemptsUsed = 0;
+    history = [];
+    gameOver = false;
+    attemptCounterEl.textContent = attemptsUsed;
+    usedEl.textContent = attemptsUsed;
+    bestEl.textContent = bestScore === null ? '—' : bestScore;
+    setStatus('Ready','Make a guess');
+    renderHistory();
+    banner(null,'');
+    revealSecret(false);
+    input.value = '';
+    input.disabled = false;
+    guessBtn.disabled = false;
+    console.log('secret (dev):', secret); // remove in production
+  }
+
+  function submitGuess(raw){
+    if(gameOver) return;
+    const guess = raw.trim();
+    const v = validateGuess(guess);
+    if(!v.ok){
+      setStatus('Invalid guess', v.msg);
+      return;
+    }
+    attemptsUsed++;
+    const sc = scoreGuess(secret,guess);
+    history.push({
+      attempt: attemptsUsed,
+      guess: guess,
+      bulls: sc.bulls,
+      bears: sc.bears,
+      goats: sc.goats
+    });
+
+    attemptCounterEl.textContent = attemptsUsed;
+    usedEl.textContent = attemptsUsed;
+
+    renderHistory();
+
+    if(sc.bulls === 3){
+      setStatus('You win!','🎉 Correct guess!');
+      banner('win', `You guessed it! Secret: ${secret} — Attempts: ${attemptsUsed}`);
+      gameOver = true;
+      input.disabled = true;
+      guessBtn.disabled = true;
+      bestScore = bestScore === null ? attemptsUsed : Math.min(bestScore, attemptsUsed);
+      bestEl.textContent = bestScore;
+      revealSecret(true);
+      return;
+    }
+
+    if(attemptsUsed >= ATTEMPTS_MAX){
+      setStatus('Game over','No attempts left');
+      banner('lose', `Out of attempts — secret was ${secret}`);
+      gameOver = true;
+      input.disabled = true;
+      guessBtn.disabled = true;
+      revealSecret(true);
+      return;
+    }
+
+    // still playing
+    setStatus(`Attempt ${attemptsUsed}/${ATTEMPTS_MAX}`, `B:${sc.bulls} • R:${sc.bears} • G:${sc.goats}`);
+    input.value = '';
+    input.focus();
+  }
+
+  // wire events
+  guessBtn.addEventListener('click', ()=>submitGuess(input.value));
+  input.addEventListener('keydown', (ev)=>{
+    if(ev.key === 'Enter') submitGuess(input.value);
+  });
+
+  newBtn.addEventListener('click', ()=>newGame());
+  hintBtn.addEventListener('click', ()=>{
+    alert('Example: secret = 549, guess = 592 → 1 Bull (5), 1 Bear (9), 1 Goat (2).\\n\nHints: no repeated digits, no leading zero.');
+  });
+  revealBtn.addEventListener('click', ()=>{
+    if(confirm('Reveal the secret number?')) revealSecret(true);
+  });
+
+  // kick off
+  newGame();
+})();
+</script>
+</body>
+</html>
